@@ -13,7 +13,7 @@ Module.register('MMM-TouchAlarm', {
         alarmSoundFadeSeconds: 30,
 
         // Expert options
-        debug: true,
+        debug: false,
         defaultHour: 08,
         defaultMinutes: 00,
         alarmStoreFileName: 'alarm.json'
@@ -321,11 +321,8 @@ Module.register('MMM-TouchAlarm', {
     triggerSnooze() {
         this.debug('triggerSnooze() called');
 
-        // Cancel running alarm timeout
-        this.cancelAlarmTimeout();
-
-        // hide alarm modal
-        this.hideAlarmModal();
+        // Stop current alarm
+        this.stopAlarm();
 
         // Set new alarm with configured snooze interval
         this.updateMinutes(this.minutes + this.config.snoozeMinutes);
