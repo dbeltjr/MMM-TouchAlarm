@@ -1,6 +1,6 @@
 Module.register('MMM-TouchAlarm', {
     defaults: {
-        minutesStepSize: 5,
+        minutesStepSize: 1,
         snoozeMinutes: 5,
         
         alarmTimeoutMinutes: 5,
@@ -14,8 +14,8 @@ Module.register('MMM-TouchAlarm', {
 
         // Expert options
         debug: false,
-        defaultHour: 08,
-        defaultMinutes: 00,
+        defaultHour: 05,
+        defaultMinutes: 20,
         alarmStoreFileName: 'alarm.json'
     },
 
@@ -565,6 +565,24 @@ Module.register('MMM-TouchAlarm', {
                 // If the alarm is/was active set nextAlarm and check if it is gone already
                 this.nextAlarm = payload.nextAlarm;
                 this.checkAlarm();
+            }
+        }
+        
+        if (notification === `${this.name}-CHANGE-ALARM-MINUTES`) {
+            if(payload.up) {
+               this.updateMinutes(this.minutes + 1);
+            }
+            else {
+               this.updateMinutes(this.minutes - 1);
+            }
+        }
+        
+        if (notification === `${this.name}-CHANGE-ALARM-HOURES`) {
+            if(payload.up) {
+               this.updateHoures(this.houres + 1);
+            }
+            else {
+               this.updateHoures(this.houres - 1);
             }
         }
     },
