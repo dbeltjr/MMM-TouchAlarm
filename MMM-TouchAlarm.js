@@ -567,24 +567,6 @@ Module.register('MMM-TouchAlarm', {
                 this.checkAlarm();
             }
         }
-        
-        if (notification === `${this.name}-CHANGE-ALARM-MINUTES`) {
-            if(payload.up) {
-               this.updateMinutes(this.minutes + 1);
-            }
-            else {
-               this.updateMinutes(this.minutes - 1);
-            }
-        }
-        
-        if (notification === `${this.name}-CHANGE-ALARM-HOURES`) {
-            if(payload.up) {
-               this.updateHoures(this.houres + 1);
-            }
-            else {
-               this.updateHoures(this.houres - 1);
-            }
-        }
     },
 
     // Handle general notifications from MagicMirror
@@ -597,6 +579,24 @@ Module.register('MMM-TouchAlarm', {
                 config: this.config,
                 alarmFile: this.file(this.config.alarmStoreFileName)
             });
+        }
+        
+        if (notification === `${this.name}-CHANGE-ALARM-MINUTES`) {
+            if(payload.up) {
+               this.updateMinutes(this.minutes + 1);
+            }
+            else {
+               this.updateMinutes(this.minutes - 1);
+            }
+        }
+        
+        if (notification === `${this.name}-CHANGE-ALARM-HOURES`) {
+            if(payload.up) {
+               this.updateHour(this.houres + 1);
+            }
+            else {
+               this.updateHour(this.houres - 1);
+            }
         }
     }
 
