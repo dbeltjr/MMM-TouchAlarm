@@ -667,19 +667,19 @@ Module.register('MMM-TouchAlarm', {
         
         if (notification === `${this.name}-CHANGE-ALARM-MINUTES`) {
             if(payload.up) {
-               this.updateMinutes(this.minutes + 1);
+               this.updateMinutes(this.mainMinutes + 1);
             }
             else {
-               this.updateMinutes(this.minutes - 1);
+               this.updateMinutes(this.mainMinutes - 1);
             }
         }
         
         if (notification === `${this.name}-CHANGE-ALARM-HOURES`) {
             if(payload.up) {
-               this.updateHour(this.houres + 1);
+               this.updateHour(this.mainHour + 1);
             }
             else {
-               this.updateHour(this.houres - 1);
+               this.updateHour(this.mainHour - 1);
             }
         }
         
