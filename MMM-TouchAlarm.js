@@ -546,6 +546,8 @@ Module.register('MMM-TouchAlarm', {
         } else {
             this.mainHour = hour;
         }
+        
+        this.hour = this.mainHour;
 
         this.updateTime();
     },
@@ -559,7 +561,9 @@ Module.register('MMM-TouchAlarm', {
         } else {
             this.mainMinutes = minutes;
         }
-
+        
+        this.minutes = this.mainMinutes;
+        
         this.updateTime();
     },
 
