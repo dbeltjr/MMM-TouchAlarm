@@ -22,11 +22,20 @@ Module.register('MMM-TouchAlarm', {
     // Inner variables
     setTimeModalVisible: false, // current state about the visibility of the set time modal
 
+    mainHour: 0,
+    mainMinutes: 0,
+    
     hour: 0, // alarm hour
     minutes: 0, // alarm minutes
+    
+    snoozeAlarmHour: 0,
+    snoozeAlarmMinutes: 0,
+    
+    alarmWasSnooze: false,
 
     alarmCheckRunner: null, // Interval that check if a alarm is reached
     nextAlarm: null, // moment with the next alarm time
+    nextSnoozeAlarm: null, // moment with the next alarm time after alarm was snoozed
     alarmFadeRunner: null, // Intervall to handle fade of the alarm
     alarmTimeoutRunner: null, // Intervall that check if the alarm should be timed out
 
@@ -48,8 +57,8 @@ Module.register('MMM-TouchAlarm', {
     start() {
         Log.info(`Starting module: ${this.name}`);
 
-        this.hour = this.config.defaultHour;
-        this.minutes = this.config.defaultMinutes;
+        this.mainHour = this.config.defaultHour;
+        this.mainMinutes = this.config.defaultMinutes;
     },
 
     getScripts() {
@@ -96,7 +105,7 @@ Module.register('MMM-TouchAlarm', {
 
         const clock = document.getElementById(this.DISPLAY_ALARM_ICON_ID);
         if (activateAlarm) {
-            this.setNextAlarm(this.hour, this.minutes);
+            this.setNextAlarm(this.mainHour, this.mainMinutes);
             this.alarmCheckRunner = setInterval(() => {
                 this.checkAlarm();
             }, 1000);
@@ -106,6 +115,35 @@ Module.register('MMM-TouchAlarm', {
             clock.classList.add('fa-bell');
         } else {
             this.nextAlarm = null;
+            // Clear active alarm check runner
+            if (this.alarmCheckRunner !== null) {
+                clearInterval(this.alarmCheckRunner);
+                this.alarmCheckRunner = null;
+            }
+            
+            // deactivate alarm icon
+            clock.classList.remove('fa-bell');
+            clock.classList.add('fa-bell-o');
+        }
+
+        this.notifyAboutAlarmChanged();
+    },
+    
+    updateSnoozeActive(activateAlarm) {
+        this.debug('updateSnoozeActive(activateAlarm) called', activateAlarm);
+
+        const clock = document.getElementById(this.DISPLAY_ALARM_ICON_ID);
+        if (activateAlarm) {
+            this.setNextSnoozeAlarm();
+            this.alarmCheckRunner = setInterval(() => {
+                this.checkAlarm();
+            }, 1000);
+
+            // activate alarm icon
+            clock.classList.remove('fa-bell-o');
+            clock.classList.add('fa-bell');
+        } else {
+            this.nextSnoozeAlarm = null;
             // Clear active alarm check runner
             if (this.alarmCheckRunner !== null) {
                 clearInterval(this.alarmCheckRunner);
@@ -193,7 +231,16 @@ Module.register('MMM-TouchAlarm', {
             this.fireAlarm();
 
             // Deactivate alarm to not ring again
+            this.alarmWasSnooze = false;
             this.updateAlarmActive(false);
+        }
+        else if (this.nextSnoozeAlarm && moment().isAfter(this.nextSnoozeAlarm)) {
+            // Fire alarm
+            this.fireAlarm();
+
+            // Deactivate alarm to not ring again
+            this.alarmWasSnooze = true;
+            this.updateSnoozeActive(false);
         }
     },
 
@@ -325,10 +372,13 @@ Module.register('MMM-TouchAlarm', {
         this.stopAlarm();
 
         // Set new alarm with configured snooze interval
-        this.updateMinutes(this.minutes + this.config.snoozeMinutes);
-
+        if (this.alarmWasSnooze == false) {
+           this.snoozeAlarmHour = this.mainHour;
+           this.snoozeAlarmMinutes = this.mainMinutes;
+        }
+        
         // Reactivate alarm
-        this.updateAlarmActive(true);
+        this.updateSnoozeActive(true);
 
         // Notify others that snoozed
         this.sendSocketNotification(`${this.name}-ALARM-SNOOZE`, {
@@ -352,7 +402,10 @@ Module.register('MMM-TouchAlarm', {
 
     setNextAlarm(hour, minutes) {
         this.debug('setNextAlarm(hour, minutes) called', hour, minutes);
-
+        
+        this.hour = this.mainHour;
+        this.minutes = this.mainMinutes;
+        
         let next = moment({ h: hour, m: minutes });
 
         // If alarm is already passed the current time ->
@@ -362,6 +415,33 @@ Module.register('MMM-TouchAlarm', {
         }
 
         this.nextAlarm = next;
+    },
+    
+    setNextSnoozeAlarm() {
+        this.debug('setNextnoozeAlarm() called', this.snoozeAlarmHour, this.snoozeAlarmMinutes);
+        
+        this.snoozeAlarmMinutes = this.snoozeAlarmMinutes + this.config.snoozeMinutes;
+        if(this.snoozeAlarmMinutes > 59) {
+            this.snoozeAlarmMinutes = 0;
+            this.snoozeAlarmHour = this.snoozeAlarmHour + 1;
+        }
+        
+        if(this.snoozeAlarmHour > 23) {
+            this.snoozeAlarmHour = 0;
+        }
+        
+        this.hour = this.snoozeAlarmHour;
+        this.minutes = this.snoozeAlarmMinutes;
+        
+        let next = moment({ h: this.snoozeAlarmHour, m: this.snoozeAlarmMinutes });
+
+        // If alarm is already passed the current time ->
+        if (next.isBefore(moment())) {
+            // shedule it for the next day
+            next = next.add(1, 'day');
+        }
+
+        this.nextSnoozeAlarm = next;
     },
 
     createShowAlarmTime() {
@@ -460,11 +540,11 @@ Module.register('MMM-TouchAlarm', {
     updateHour(hour) {
         this.debug('updateHour(hour) called', hour);
         if(hour > 23) {
-            this.hour = 0;
+            this.mainHour = 0;
         } else if(hour < 0) {
-            this.hour = 23;
+            this.mainHour = 23;
         } else {
-            this.hour = hour;
+            this.mainHour = hour;
         }
 
         this.updateTime();
@@ -473,27 +553,27 @@ Module.register('MMM-TouchAlarm', {
     updateMinutes(minutes) {
         this.debug('updateMinutes(minutes) called', minutes);
         if(minutes > 59) {
-            this.minutes = 0;
+            this.mainMinutes = 0;
         } else if (minutes < 0) {
-            this.minutes = 60 - this.config.minutesStepSize;
+            this.mainMinutes = 60 - this.config.minutesStepSize;
         } else {
-            this.minutes = minutes;
+            this.mainMinutes = minutes;
         }
 
         this.updateTime();
     },
 
     updateTime() {
-        document.getElementById(this.DISPLAY_TIME_ID).innerText = this.formatFullTime(this.hour, this.minutes);
+        document.getElementById(this.DISPLAY_TIME_ID).innerText = this.formatFullTime(this.mainHour, this.mainMinutes);
 
         const setTimeHour = document.getElementById(this.SETTIME_HOUR_ID);
         if(setTimeHour) {
-            setTimeHour.innerText = this.formatTime(this.hour);
+            setTimeHour.innerText = this.formatTime(this.mainHour);
         }
 
         const setTimeMinutes = document.getElementById(this.SETTIME_MINUTES_ID);
         if(setTimeMinutes) {
-            setTimeMinutes.innerText = this.formatTime(this.minutes);
+            setTimeMinutes.innerText = this.formatTime(this.mainMinutes);
         }
     },
 
@@ -597,6 +677,19 @@ Module.register('MMM-TouchAlarm', {
             else {
                this.updateHour(this.houres - 1);
             }
+        }
+        
+        if (notification === `${this.name}-TURN-ALARM-ONOFF`) {
+            if (payload.on)
+               updateAlarmActive(true);
+            else {
+               updateAlarmActive(false);
+               updateSnoozeActive(false);
+            }
+        }
+        
+        if (notification === `${this.name}-TRIGGER-SNOOZE`) {
+            triggerSnooze()
         }
     }
 
