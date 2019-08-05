@@ -59,6 +59,8 @@ Module.register('MMM-TouchAlarm', {
 
         this.mainHour = this.config.defaultHour;
         this.mainMinutes = this.config.defaultMinutes;
+        this.hour = this.mainHour;
+        this.minutes = this.mainMinutes;
     },
 
     getScripts() {
