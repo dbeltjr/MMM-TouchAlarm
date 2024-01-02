@@ -1,4 +1,5 @@
 # Touchable Alarm Clock Module for MagicMirror<sup>2</sup>
+# Includes Instructions at the Bottcom for Integrating Screen Brightness That Matches Alarm Time
 
 ## Dependencies
 
@@ -6,8 +7,10 @@
 
 ## Installation
 
-1. Clone this repo into `~/MagicMirror/modules` directory.
-1. Configure your `~/MagicMirror/config/config.js`:
+1. Navigate to the MagicMirror/modules directory.
+1. Execute `git clone https://github.com/dbeltjr/MMM-TouchAlarm.git`
+1. Configure the module as per below
+1. Restart MagicMirror
 
     ```
     {
@@ -25,9 +28,9 @@
 
 ## (Currently) Known limitations
 
-* If you snooze, the alarm time will be updated. So the next day you have to reset the alarm and reduce it by the snoozed time.
+* If you hit snooze, the alarm time will be updated. So the next day you have to reset the alarm and reduce it by the snoozed time.
 
-* If you close an alarm it will not be automatically be reset for the next day, you've to click the bell again.
+* If you close an alarm it will not be automatically reset for the next day, you'll have to click the bell again.
 
 
 ## Config Options
@@ -55,20 +58,47 @@ There are already two alarm sounds:
 * [alarm.mp3](http://www.orangefreesounds.com/mp3-alarm-clock/) | From Alexander licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 * [blackforest.mp3](http://www.orangefreesounds.com/coo-coo-clock-sound/) | From Alexander licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 
-
-## Notifications
-
-More notifications will be implemented as soon as wished.
-
 ### Outgoing
 
-* `MMM-TouchAlarm-ALARM-CHANGED` -> will be send `hour`: number, `minutes`: number, `active`: boolean, `nextAlarm`: moment-timestamp
-* `MMM-TouchAlarm-ALARM-FIRED`   -> will be send `hour`: number, `minutes`: number
-* `MMM-TouchAlarm-ALARM-SNOOZE`  -> will be send `hour`: number, `minutes`: number
+* `MMM-TouchAlarm-ALARM-CHANGED` -> will send `hour`: number, `minutes`: number, `active`: boolean, `nextAlarm`: moment-timestamp
+* `MMM-TouchAlarm-ALARM-FIRED`   -> will send `hour`: number, `minutes`: number
+* `MMM-TouchAlarm-ALARM-SNOOZE`  -> will send `hour`: number, `minutes`: number
 
+### Integration with Adjusting Screen Brightness with Alarm Time
 
-## Special Thanks
-Special thanks to [fewieden](https://github.com/fewieden/) for creating [MMM-AlarmClock](https://github.com/fewieden/MMM-AlarmClock) which helped a lot to create this project.
+**Caveat - This was created for a Raspberry Pi 3B+ with the official 7" Touch Screen and may need to be adjusted for any other particular application**
 
+## Dependencies
 
+1. Go to home directory `cd ~`
+1. Install jq `sudo apt-get install jq`
 
+## Setup Cron with Script
+
+1. Move `update_cron.sh` to your home directory
+1. Edit script to put in proper file paths `sudo nano update_cron.sh`
+1. Modify these two lines for proper file path to alarm.json:
+	```
+	newHour=$("$jqPath" -r '.hour' /home/dietpi/MagicMirror/modules/MMM-TouchAlarm/alarm.json)
+	newMinutes=$("$jqPath" -r '.minutes' /home/dietpi/MagicMirror/modules/MMM-TouchAlarm/alarm.json)
+	```
+1. If a different command needs to be used in cron to adjust screen brightness, it must be edited in the script as well under:
+	```
+	# Construct the new cron entry
+	cron_entry="$newMinutes $newHour * * * /usr/bin/sudo sh -c 'echo \"255\" > /sys/class/backlight/rpi_backlight/brightness'"
+	```
+1. Save and Exit
+1. Execute `sudo chmod +x update_cron.sh` to ensure script has execute permission
+1. Edit Cron under root user `sudo crontab -e`
+
+1. Add the following at the end of crontab:
+	```
+	30 21 * * * /usr/bin/sudo sh -c 'echo 10 > /sys/class/backlight/rpi_backlight/brightness'
+	*/10 * * * * /home/dietpi/update_cron.sh
+
+	# This is my special cron job
+	0 6 * * * /usr/bin/sudo sh -c 'echo 255 > /sys/class/backlight/rpi_backlight/brightness'
+	```
+	This reduces the screen brightness to "10" at 9:30 PM and then runs the update_cron.sh every 10 minutes. It copies the hour and minutes from alarm.json and updates the cron task after the phrase "# This is my special cron job"
+	Anything edited below "# This is my special cron job" will be deleted and re-added each time the alarm is changed.
+1. Save and Exit crontab
