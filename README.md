@@ -1,5 +1,5 @@
 # Touchable Alarm Clock Module for MagicMirror<sup>2</sup>
-# Includes Instructions at the Bottcom for Integrating Screen Brightness That Matches Alarm Time
+### Includes Instructions at the Bottcom for Integrating Screen Brightness That Matches Alarm Time
 
 ## Dependencies
 
@@ -64,7 +64,7 @@ There are already two alarm sounds:
 * `MMM-TouchAlarm-ALARM-FIRED`   -> will send `hour`: number, `minutes`: number
 * `MMM-TouchAlarm-ALARM-SNOOZE`  -> will send `hour`: number, `minutes`: number
 
-### Integration with Adjusting Screen Brightness with Alarm Time
+# Integration with Adjusting Screen Brightness with Alarm Time
 
 **Caveat - This was created for a Raspberry Pi 3B+ with the official 7" Touch Screen and may need to be adjusted for any other particular application**
 
