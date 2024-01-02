@@ -1,4 +1,5 @@
 # Touchable Alarm Clock Module for MagicMirror<sup>2</sup>
+
 ### Includes Instructions at the Bottcom for Integrating Screen Brightness That Matches Alarm Time
 
 ## Dependencies
